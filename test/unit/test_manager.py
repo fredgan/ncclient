@@ -2,8 +2,9 @@ import unittest
 from mock import patch, MagicMock
 from ncclient import manager, connect
 from ncclient.devices.junos import JunosDeviceHandler
-import logging
-
+import logging, sys
+if sys.version_info.major > 2:
+    from test.asyncio_examples import *
 
 class TestManager(unittest.TestCase):
 
@@ -20,6 +21,23 @@ class TestManager(unittest.TestCase):
                                           timeout=3)
         self.assertEqual(conn._session, m)
         self.assertEqual(conn._timeout, 10)
+
+    @unittest.skipIf(sys.version_info.major == 2, "test not supported < python3")
+    @patch('ncclient.manager.connect_ssh')
+    def test_async_connect(self, mock_ssh):
+        expected = [
+            '<rpc-reply><data><root>This is `get` operations</root></data></rpc-reply>',
+            '<rpc-reply><data><root>This is `get-config` operations</root></data></rpc-reply>',
+            '<rpc-reply><ok/></rpc-reply>',
+            '<rpc-reply><ok/></rpc-reply>',
+            '<rpc-reply><rpc-error><error-message>Request resource already locked</error-message></rpc-error></rpc-reply>'
+           ]
+
+        obj = TestAsyncioManager()
+        res = obj.test_async_mode()
+
+        for i in range(len(expected)):
+            assert res[i] == expected[i]
 
     @patch('ncclient.manager.connect_ssh')
     def test_connect_ssh(self, mock_ssh):
