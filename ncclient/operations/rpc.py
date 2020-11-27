@@ -458,7 +458,7 @@ class GenericRPC(RPC):
     REPLY_CLS = RPCReply
     """See :class:`RPCReply`."""
 
-    def request(self, rpc_command, source=None, filter=None, config=None, target=None, format=None):
+    def request(self, rpc_command, source=None, filter=None, config=None, target=None, format='xml'):
         """
         *rpc_command* specifies rpc command to be dispatched either in plain text or in xml element format (depending on command)
 
@@ -494,6 +494,12 @@ class GenericRPC(RPC):
         if filter is not None:
             node.append(util.build_filter(filter))
         if config is not None:
-            node.append(validated_element(config, ("config", qualify("config"))))
+            if format == 'xml':
+                node.append(validated_element(config, ("config", qualify("config"))))
+            elif format == 'text':
+                config_text = sub_ele(node, "config-text")
+                sub_ele(config_text, "configuration-text").text = config
+            else:
+                raise OperationError("invalid format.")
 
         return self._request(node)
